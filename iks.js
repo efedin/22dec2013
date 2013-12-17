@@ -3,14 +3,14 @@
 var ikData = [
 	{
 		"type": "УИКи",
-		"pict": "images/number_{number}.png",
-		"shadow": "images/shadow.png",
+		"iconUrl": "images/number_{number}.png",
+		"shadowUrl": "images/shadow.png",
 		"popupTpl": "<strong>УИК {number} ({count} изб.)</strong><br/>{phone}. {addr}"
 	},
 	{
 		"type": "ТИКи",
-		"pict": "images/symbol_sum.png",
-		"shadow": "images/shadow.png",
+		"iconUrl": "images/symbol_sum.png",
+		"shadowUrl": "images/shadow.png",
 		"popupTpl": "<strong>ТИК <a href='{url}'>{name}</a> ({members} ПРГ)</strong><br/>{phone}. {desc}"
 	}
 ];
@@ -34,6 +34,17 @@ var getMapYaCentered = function() {
 	map.setView(center, 14).addLayer(mapnik);
 	return map;
 };
+var tplObj = function(templ, obj) {
+	var res = {};
+	for (var prop in templ) {
+		if (typeof templ[prop] == 'string') {
+			res[prop] = templ[prop].replace(/{([^}]+)}/g, function(a, b) {
+				return obj[b];
+			});
+		}
+	}
+	return res;
+};
 var tpl = function(templ, obj) {
 	return templ.replace(/{([^}]+)}/g, function(a, b) {
 		return obj[b];
@@ -42,23 +53,20 @@ var tpl = function(templ, obj) {
 var createMap = function() {
 	var map = getMapYaCentered(),
 		IkIcon = L.Icon.extend({
-			iconSize: new L.Point(32, 37),
-			shadowSize: new L.Point(51, 37),
-			shadowUrl: "images/shadow.png"
+			options: {
+				"iconSize": [32, 37],
+				"shadowSize": [51, 37],
+				"popupAnchor": [0, -16]
+			}
 		}),
-		groupIcon,
-		markerPlace,
-		marker,
-		arr;
+		groupIcon, arr, i, len;
 
-	for (var i = 0, len = ikData.length; i < len; i++) {
+	for (i = 0, len = ikData.length; i < len; i++) {
 		arr = ikData[i].data;
 		for (var j = 0, leng = arr.length; j < leng; j++) {
-			groupIcon = new IkIcon(tpl(ikData[i].pict, arr[j]));
-			markerPlace = new L.LatLng(arr[j].lat, arr[j].lon);
-			marker = new L.Marker(markerPlace, {icon: groupIcon});
-			marker.bindPopup(tpl(ikData[i].popupTpl, arr[j]));
-			map.addLayer(marker);
+			groupIcon = new IkIcon(tplObj(ikData[i], arr[j]));
+			L.marker([arr[j].lat, arr[j].lon], {icon: groupIcon}).addTo(map)
+				.bindPopup(tpl(ikData[i].popupTpl, arr[j]));
 		}
 	}
 
